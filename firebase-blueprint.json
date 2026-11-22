@@ -1,0 +1,184 @@
+{
+  "entities": {
+    "BookingAgreement": {
+      "title": "BookingAgreement",
+      "description": "AI Advertisement booking, 10-point production agreement, and separate publishing rights record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the client owner." },
+        "userEmail": { "type": "string", "description": "Client Google account email." },
+        "referenceNumber": { "type": "string", "description": "Unique booking reference number." },
+        "agreementReferenceNumber": { "type": "string", "description": "Unique digital agreement reference number." },
+        "clientFullName": { "type": "string" },
+        "businessName": { "type": "string" },
+        "businessAddress": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "emailAddress": { "type": "string" },
+        "adTitle": { "type": "string" },
+        "productServiceName": { "type": "string" },
+        "adType": { "type": "string" },
+        "adLanguage": { "type": "string" },
+        "videoDuration": { "type": "string" },
+        "deliverablesCount": { "type": "integer" },
+        "budgetRange": { "type": "string" },
+        "agreedPrice": { "type": "string" },
+        "advancePaymentDetails": { "type": "string" },
+        "projectDescription": { "type": "string" },
+        "specialInstructions": { "type": "string" },
+        "referenceMediaSummary": { "type": "string" },
+        "expectedDeliveryDate": { "type": "string" },
+        "productionAgreementAccepted": { "type": "boolean" },
+        "aiContentDisclosureAccepted": { "type": "boolean" },
+        "realPersonVoiceConsentAccepted": { "type": "boolean" },
+        "clientApprovalChecked": { "type": "boolean" },
+        "clientFinalApproved": { "type": "boolean" },
+        "clientApprovalAccuracy": { "type": "boolean" },
+        "publishClientSocial": { "type": "boolean" },
+        "publishAgencySocial": { "type": "boolean" },
+        "publishAgencyPortfolio": { "type": "boolean" },
+        "publishDoNotPublish": { "type": "boolean" },
+        "clientSignature": { "type": "string" },
+        "agreementDate": { "type": "string" },
+        "representativeName": { "type": "string" },
+        "projectStatus": {
+          "type": "string",
+          "enum": ["NEW", "AGREEMENT_PENDING", "AGREEMENT_ACCEPTED", "SCRIPT_APPROVAL", "PRODUCTION", "CLIENT_REVIEW", "FINAL_APPROVAL", "DELIVERED"]
+        },
+        "publishingStatus": {
+          "type": "string",
+          "enum": ["NOT_AUTHORIZED", "PENDING_APPROVAL", "AUTHORIZED", "REVOKED"]
+        },
+        "paymentStatus": {
+          "type": "string",
+          "enum": ["UNPAID", "ADVANCE_PAID", "PAID_IN_FULL"]
+        },
+        "revisionNotes": { "type": "string" },
+        "deliveryCompleted": { "type": "boolean" },
+        "agreementVersion": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": [
+        "userId", "referenceNumber", "agreementReferenceNumber", "clientFullName",
+        "businessName", "businessAddress", "whatsappNumber", "adTitle",
+        "productServiceName", "adType", "adLanguage", "videoDuration",
+        "deliverablesCount", "budgetRange", "projectDescription",
+        "expectedDeliveryDate", "productionAgreementAccepted",
+        "aiContentDisclosureAccepted", "realPersonVoiceConsentAccepted",
+        "clientSignature", "agreementDate", "representativeName",
+        "projectStatus", "publishingStatus", "paymentStatus",
+        "deliveryCompleted", "agreementVersion", "createdAt", "updatedAt"
+      ]
+    },
+    "BookingHistoryEvent": {
+      "title": "BookingHistoryEvent",
+      "description": "Immutable timestamped version history log entry for a booking agreement.",
+      "type": "object",
+      "properties": {
+        "bookingId": { "type": "string" },
+        "userId": { "type": "string" },
+        "actorEmail": { "type": "string" },
+        "actorRole": { "type": "string", "enum": ["CLIENT", "ADMIN"] },
+        "actionTitle": { "type": "string" },
+        "actionDetail": { "type": "string" },
+        "agreementVersion": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["bookingId", "userId", "actorRole", "actionTitle", "agreementVersion", "createdAt"]
+    },
+    "PortfolioItem": {
+      "title": "PortfolioItem",
+      "description": "Admin-managed AI concept advertisement showcase item.",
+      "type": "object",
+      "properties": {
+        "titleEn": { "type": "string" },
+        "titleTe": { "type": "string" },
+        "category": { "type": "string" },
+        "descriptionEn": { "type": "string" },
+        "descriptionTe": { "type": "string" },
+        "durationLabel": { "type": "string" },
+        "visualKey": { "type": "string" },
+        "storyboardSteps": { "type": "array" },
+        "conceptNoticeEn": { "type": "string" },
+        "conceptNoticeTe": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["titleEn", "titleTe", "category", "descriptionEn", "descriptionTe", "durationLabel", "visualKey", "storyboardSteps", "conceptNoticeEn", "conceptNoticeTe", "createdBy", "createdAt", "updatedAt"]
+    },
+    "AgencyService": {
+      "title": "AgencyService",
+      "description": "Admin-managed AI advertising service offering.",
+      "type": "object",
+      "properties": {
+        "orderIndex": { "type": "integer" },
+        "titleEn": { "type": "string" },
+        "titleTe": { "type": "string" },
+        "descriptionEn": { "type": "string" },
+        "descriptionTe": { "type": "string" },
+        "deliverablesEn": { "type": "string" },
+        "deliverablesTe": { "type": "string" },
+        "adTypeKey": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["orderIndex", "titleEn", "titleTe", "descriptionEn", "descriptionTe", "deliverablesEn", "deliverablesTe", "adTypeKey", "createdBy", "createdAt", "updatedAt"]
+    },
+    "BusinessEnquiry": {
+      "title": "BusinessEnquiry",
+      "description": "Client business enquiry submitted from the Contact studio section.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "businessName": { "type": "string" },
+        "whatsappNumber": { "type": "string" },
+        "email": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["OPEN", "RESPONDED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "businessName", "whatsappNumber", "message", "status", "createdAt", "updatedAt"]
+    },
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized ALPHA MEDIA administrator record.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "displayName", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/BookingAgreement" },
+      "description": "Client advertisement bookings, production agreements, and separate publishing rights."
+    },
+    "/bookings/{bookingId}/history/{eventId}": {
+      "schema": { "$ref": "#/entities/BookingHistoryEvent" },
+      "description": "Immutable version history and approval audit log for each booking."
+    },
+    "/portfolio_items/{itemId}": {
+      "schema": { "$ref": "#/entities/PortfolioItem" },
+      "description": "Admin-managed AI concept advertisement portfolio items."
+    },
+    "/services/{serviceId}": {
+      "schema": { "$ref": "#/entities/AgencyService" },
+      "description": "Admin-managed Alpha Media AI advertising services."
+    },
+    "/enquiries/{enquiryId}": {
+      "schema": { "$ref": "#/entities/BusinessEnquiry" },
+      "description": "Client business enquiries from the contact page."
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Authorized administrator registry."
+    }
+  }
+}

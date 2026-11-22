@@ -1,0 +1,323 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- GLOBAL HARDENED PRIMITIVES ---
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email_verified == true && request.auth.token.email == 'madhavaboga777@gmail.com')
+      );
+    }
+
+    // --- VALIDATION BLUEPRINTS ---
+    function isValidProjectStatus(status) {
+      return status in [
+        'NEW',
+        'AGREEMENT_PENDING',
+        'AGREEMENT_ACCEPTED',
+        'SCRIPT_APPROVAL',
+        'PRODUCTION',
+        'CLIENT_REVIEW',
+        'FINAL_APPROVAL',
+        'DELIVERED'
+      ];
+    }
+
+    function isValidPublishingStatus(status) {
+      return status in [
+        'NOT_AUTHORIZED',
+        'PENDING_APPROVAL',
+        'AUTHORIZED',
+        'REVOKED'
+      ];
+    }
+
+    function isValidPaymentStatus(status) {
+      return status in ['UNPAID', 'ADVANCE_PAID', 'PAID_IN_FULL'];
+    }
+
+    function bookingAllowedKeys() {
+      return [
+        'userId', 'userEmail', 'referenceNumber', 'agreementReferenceNumber',
+        'clientFullName', 'businessName', 'businessAddress', 'whatsappNumber',
+        'emailAddress', 'adTitle', 'productServiceName', 'adType', 'adLanguage',
+        'videoDuration', 'deliverablesCount', 'budgetRange', 'agreedPrice',
+        'advancePaymentDetails', 'projectDescription', 'specialInstructions',
+        'referenceMediaSummary', 'expectedDeliveryDate',
+        'productionAgreementAccepted', 'aiContentDisclosureAccepted',
+        'realPersonVoiceConsentAccepted', 'clientApprovalChecked',
+        'clientFinalApproved', 'clientApprovalAccuracy',
+        'publishClientSocial', 'publishAgencySocial',
+        'publishAgencyPortfolio', 'publishDoNotPublish',
+        'clientSignature', 'agreementDate', 'representativeName',
+        'projectStatus', 'publishingStatus', 'paymentStatus',
+        'revisionNotes', 'deliveryCompleted', 'agreementVersion',
+        'createdAt', 'updatedAt'
+      ];
+    }
+
+    function isValidBooking(data) {
+      return data.keys().hasAll(bookingAllowedKeys()) &&
+        data.keys().hasOnly(bookingAllowedKeys()) &&
+        data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.userEmail is string && data.userEmail.size() <= 160 &&
+        data.referenceNumber is string && data.referenceNumber.size() >= 4 && data.referenceNumber.size() <= 64 &&
+        data.agreementReferenceNumber is string && data.agreementReferenceNumber.size() >= 4 && data.agreementReferenceNumber.size() <= 64 &&
+        data.clientFullName is string && data.clientFullName.size() >= 2 && data.clientFullName.size() <= 120 &&
+        data.businessName is string && data.businessName.size() >= 2 && data.businessName.size() <= 160 &&
+        data.businessAddress is string && data.businessAddress.size() >= 3 && data.businessAddress.size() <= 300 &&
+        data.whatsappNumber is string && data.whatsappNumber.size() >= 7 && data.whatsappNumber.size() <= 25 &&
+        data.emailAddress is string && data.emailAddress.size() <= 160 &&
+        data.adTitle is string && data.adTitle.size() >= 2 && data.adTitle.size() <= 160 &&
+        data.productServiceName is string && data.productServiceName.size() >= 2 && data.productServiceName.size() <= 160 &&
+        data.adType is string && data.adType.size() >= 2 && data.adType.size() <= 80 &&
+        data.adLanguage is string && data.adLanguage.size() >= 2 && data.adLanguage.size() <= 40 &&
+        data.videoDuration is string && data.videoDuration.size() >= 1 && data.videoDuration.size() <= 60 &&
+        data.deliverablesCount is int && data.deliverablesCount >= 1 && data.deliverablesCount <= 500 &&
+        data.budgetRange is string && data.budgetRange.size() >= 1 && data.budgetRange.size() <= 80 &&
+        data.agreedPrice is string && data.agreedPrice.size() <= 80 &&
+        data.advancePaymentDetails is string && data.advancePaymentDetails.size() <= 300 &&
+        data.projectDescription is string && data.projectDescription.size() >= 5 && data.projectDescription.size() <= 2000 &&
+        data.specialInstructions is string && data.specialInstructions.size() <= 1000 &&
+        data.referenceMediaSummary is string && data.referenceMediaSummary.size() <= 500 &&
+        data.expectedDeliveryDate is string && data.expectedDeliveryDate.size() >= 4 && data.expectedDeliveryDate.size() <= 40 &&
+        data.productionAgreementAccepted is bool &&
+        data.aiContentDisclosureAccepted is bool &&
+        data.realPersonVoiceConsentAccepted is bool &&
+        data.clientApprovalChecked is bool &&
+        data.clientFinalApproved is bool &&
+        data.clientApprovalAccuracy is bool &&
+        data.publishClientSocial is bool &&
+        data.publishAgencySocial is bool &&
+        data.publishAgencyPortfolio is bool &&
+        data.publishDoNotPublish is bool &&
+        data.clientSignature is string && data.clientSignature.size() >= 2 && data.clientSignature.size() <= 120 &&
+        data.agreementDate is string && data.agreementDate.size() >= 4 && data.agreementDate.size() <= 40 &&
+        data.representativeName is string && data.representativeName.size() >= 2 && data.representativeName.size() <= 120 &&
+        isValidProjectStatus(data.projectStatus) &&
+        isValidPublishingStatus(data.publishingStatus) &&
+        isValidPaymentStatus(data.paymentStatus) &&
+        data.revisionNotes is string && data.revisionNotes.size() <= 1000 &&
+        data.deliveryCompleted is bool &&
+        data.agreementVersion is int && data.agreementVersion >= 1 && data.agreementVersion <= 1000 &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPublishingConsistency(data) {
+      return (
+        (!data.publishClientSocial && !data.publishAgencySocial && !data.publishAgencyPortfolio) ||
+        !data.publishDoNotPublish
+      ) && (
+        !(data.publishingStatus in ['PENDING_APPROVAL', 'AUTHORIZED']) ||
+        (!data.publishDoNotPublish && (data.publishClientSocial || data.publishAgencySocial || data.publishAgencyPortfolio))
+      );
+    }
+
+    function isValidHistoryEvent(data) {
+      return data.keys().hasAll(['bookingId', 'userId', 'actorEmail', 'actorRole', 'actionTitle', 'actionDetail', 'agreementVersion', 'createdAt']) &&
+        data.keys().hasOnly(['bookingId', 'userId', 'actorEmail', 'actorRole', 'actionTitle', 'actionDetail', 'agreementVersion', 'createdAt']) &&
+        data.bookingId is string && data.bookingId.size() >= 1 && data.bookingId.size() <= 128 &&
+        data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.actorEmail is string && data.actorEmail.size() <= 160 &&
+        data.actorRole in ['CLIENT', 'ADMIN'] &&
+        data.actionTitle is string && data.actionTitle.size() >= 2 && data.actionTitle.size() <= 120 &&
+        data.actionDetail is string && data.actionDetail.size() <= 500 &&
+        data.agreementVersion is int && data.agreementVersion >= 1 && data.agreementVersion <= 1000 &&
+        data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidPortfolioItem(data) {
+      return data.keys().hasAll(['titleEn', 'titleTe', 'category', 'descriptionEn', 'descriptionTe', 'durationLabel', 'visualKey', 'storyboardSteps', 'conceptNoticeEn', 'conceptNoticeTe', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['titleEn', 'titleTe', 'category', 'descriptionEn', 'descriptionTe', 'durationLabel', 'visualKey', 'storyboardSteps', 'conceptNoticeEn', 'conceptNoticeTe', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.titleEn is string && data.titleEn.size() >= 2 && data.titleEn.size() <= 120 &&
+        data.titleTe is string && data.titleTe.size() >= 2 && data.titleTe.size() <= 160 &&
+        data.category is string && data.category.size() >= 2 && data.category.size() <= 80 &&
+        data.descriptionEn is string && data.descriptionEn.size() >= 5 && data.descriptionEn.size() <= 800 &&
+        data.descriptionTe is string && data.descriptionTe.size() >= 5 && data.descriptionTe.size() <= 1000 &&
+        data.durationLabel is string && data.durationLabel.size() >= 1 && data.durationLabel.size() <= 40 &&
+        data.visualKey is string && data.visualKey.size() >= 1 && data.visualKey.size() <= 60 &&
+        data.storyboardSteps is list && data.storyboardSteps.size() <= 8 && (data.storyboardSteps.size() == 0 || data.storyboardSteps[0] is string) &&
+        data.conceptNoticeEn is string && data.conceptNoticeEn.size() >= 5 && data.conceptNoticeEn.size() <= 200 &&
+        data.conceptNoticeTe is string && data.conceptNoticeTe.size() >= 5 && data.conceptNoticeTe.size() <= 200 &&
+        data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128 &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidServiceItem(data) {
+      return data.keys().hasAll(['orderIndex', 'titleEn', 'titleTe', 'descriptionEn', 'descriptionTe', 'deliverablesEn', 'deliverablesTe', 'adTypeKey', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['orderIndex', 'titleEn', 'titleTe', 'descriptionEn', 'descriptionTe', 'deliverablesEn', 'deliverablesTe', 'adTypeKey', 'createdBy', 'createdAt', 'updatedAt']) &&
+        data.orderIndex is int && data.orderIndex >= 1 && data.orderIndex <= 100 &&
+        data.titleEn is string && data.titleEn.size() >= 2 && data.titleEn.size() <= 120 &&
+        data.titleTe is string && data.titleTe.size() >= 2 && data.titleTe.size() <= 160 &&
+        data.descriptionEn is string && data.descriptionEn.size() >= 5 && data.descriptionEn.size() <= 600 &&
+        data.descriptionTe is string && data.descriptionTe.size() >= 5 && data.descriptionTe.size() <= 800 &&
+        data.deliverablesEn is string && data.deliverablesEn.size() >= 2 && data.deliverablesEn.size() <= 200 &&
+        data.deliverablesTe is string && data.deliverablesTe.size() >= 2 && data.deliverablesTe.size() <= 200 &&
+        data.adTypeKey is string && data.adTypeKey.size() >= 2 && data.adTypeKey.size() <= 80 &&
+        data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128 &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidEnquiry(data) {
+      return data.keys().hasAll(['userId', 'name', 'businessName', 'whatsappNumber', 'email', 'message', 'status', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['userId', 'name', 'businessName', 'whatsappNumber', 'email', 'message', 'status', 'createdAt', 'updatedAt']) &&
+        data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+        data.businessName is string && data.businessName.size() >= 2 && data.businessName.size() <= 160 &&
+        data.whatsappNumber is string && data.whatsappNumber.size() >= 7 && data.whatsappNumber.size() <= 25 &&
+        data.email is string && data.email.size() <= 160 &&
+        data.message is string && data.message.size() >= 5 && data.message.size() <= 1500 &&
+        data.status in ['OPEN', 'RESPONDED'] &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['email', 'displayName', 'createdAt']) &&
+        data.keys().hasOnly(['email', 'displayName', 'createdAt']) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120 &&
+        data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    // --- COLLECTIONS ---
+
+    match /admins/{adminUid} {
+      allow get: if isSignedIn() && isValidId(adminUid) && (request.auth.uid == adminUid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(adminUid) && isValidAdminUser(incoming());
+      allow update: if isAdmin() && isValidId(adminUid) && isValidAdminUser(incoming()) && incoming().createdAt == existing().createdAt;
+      allow delete: if isAdmin() && isValidId(adminUid);
+    }
+
+    match /bookings/{bookingId} {
+      allow get: if isSignedIn() && isValidId(bookingId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      allow create: if isValidId(bookingId) &&
+        isValidBooking(incoming()) &&
+        isValidPublishingConsistency(incoming()) &&
+        (
+          (isSignedIn() && incoming().userId == request.auth.uid) ||
+          (!isSignedIn() && incoming().userId == 'guest')
+        ) &&
+        incoming().productionAgreementAccepted == true &&
+        incoming().aiContentDisclosureAccepted == true &&
+        incoming().realPersonVoiceConsentAccepted == true &&
+        incoming().projectStatus in ['NEW', 'AGREEMENT_ACCEPTED'] &&
+        incoming().paymentStatus == 'UNPAID' &&
+        incoming().deliveryCompleted == false &&
+        incoming().agreementVersion == 1;
+
+      allow update: if isSignedIn() &&
+        isValidId(bookingId) &&
+        isValidBooking(incoming()) &&
+        isValidPublishingConsistency(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().referenceNumber == existing().referenceNumber &&
+        incoming().agreementReferenceNumber == existing().agreementReferenceNumber && (
+          (isAdmin() &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'projectStatus', 'publishingStatus', 'paymentStatus',
+              'revisionNotes', 'representativeName', 'agreedPrice',
+              'advancePaymentDetails', 'deliveryCompleted', 'agreementVersion', 'updatedAt'
+            ])
+          ) ||
+          (existing().userId == request.auth.uid && (
+            // Action 1: Withdraw or update optional publishing permission anytime
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'publishClientSocial', 'publishAgencySocial', 'publishAgencyPortfolio',
+              'publishDoNotPublish', 'publishingStatus', 'agreementVersion', 'updatedAt'
+            ]) ||
+            // Action 2: Client correction, revision request, or final approval (blocked once DELIVERED)
+            (existing().projectStatus != 'DELIVERED' &&
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'clientFinalApproved', 'clientApprovalAccuracy', 'revisionNotes',
+                'specialInstructions', 'projectStatus', 'agreementVersion', 'updatedAt'
+              ]) &&
+              incoming().projectStatus in [existing().projectStatus, 'FINAL_APPROVAL']
+            )
+          ))
+        );
+
+      allow delete: if isAdmin() && isValidId(bookingId);
+
+      match /history/{eventId} {
+        allow get: if isSignedIn() && isValidId(bookingId) && isValidId(eventId) && (existing().userId == request.auth.uid || isAdmin());
+        allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+        allow create: if isValidId(bookingId) &&
+          isValidId(eventId) &&
+          isValidHistoryEvent(incoming()) &&
+          incoming().bookingId == bookingId &&
+          (
+            (isSignedIn() && incoming().userId == request.auth.uid && incoming().actorRole == 'CLIENT') ||
+            (isSignedIn() && isAdmin() && incoming().actorRole == 'ADMIN') ||
+            (!isSignedIn() && incoming().userId == 'guest' && incoming().actorRole == 'CLIENT' &&
+              getAfter(/databases/$(database)/documents/bookings/$(bookingId)).data.userId == 'guest')
+          );
+        allow update, delete: if false;
+      }
+    }
+
+    match /portfolio_items/{itemId} {
+      allow get: if isValidId(itemId);
+      allow list: if true;
+      allow create: if isAdmin() && isValidId(itemId) && isValidPortfolioItem(incoming()) && incoming().createdBy == request.auth.uid;
+      allow update: if isAdmin() && isValidId(itemId) && isValidPortfolioItem(incoming()) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt;
+      allow delete: if isAdmin() && isValidId(itemId);
+    }
+
+    match /services/{serviceId} {
+      allow get: if isValidId(serviceId);
+      allow list: if true;
+      allow create: if isAdmin() && isValidId(serviceId) && isValidServiceItem(incoming()) && incoming().createdBy == request.auth.uid;
+      allow update: if isAdmin() && isValidId(serviceId) && isValidServiceItem(incoming()) && incoming().createdBy == existing().createdBy && incoming().createdAt == existing().createdAt;
+      allow delete: if isAdmin() && isValidId(serviceId);
+    }
+
+    match /enquiries/{enquiryId} {
+      allow get: if isSignedIn() && isValidId(enquiryId) && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isValidId(enquiryId) &&
+        isValidEnquiry(incoming()) &&
+        (
+          (isSignedIn() && incoming().userId == request.auth.uid) ||
+          (!isSignedIn() && incoming().userId == 'guest')
+        ) &&
+        incoming().status == 'OPEN';
+      allow update: if isAdmin() &&
+        isValidId(enquiryId) &&
+        isValidEnquiry(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(enquiryId);
+    }
+  }
+}
